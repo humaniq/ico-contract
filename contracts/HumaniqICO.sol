@@ -9,7 +9,7 @@ contract HumaniqICO {
     /*
      * External contracts
      */
-    HumaniqToken public humaniqToken = HumaniqToken(0x0);
+    HumaniqToken public humaniqToken;
 
     /*
      * Crowdfunding parameters
@@ -177,11 +177,13 @@ contract HumaniqICO {
     }
 
     /// @dev Contract constructor function sets founder and multisig addresses.
-    function HumaniqICO(address _multisig) {
+    function HumaniqICO(address _multisig, address token_address) {
         // Set founder address
         founder = msg.sender;
         // Set multisig address
         multisig = _multisig;
+        // Set token address
+        humaniqToken = HumaniqToken(token_address);
     }
 
     /// @dev Fallback function. Calls fund() function to create tokens.
