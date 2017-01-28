@@ -79,7 +79,10 @@ contract HumaniqICO {
         _;
     }
 
-    function issueTokens(uint investment)
+    /// @dev Issues tokens
+    /// @param beneficiary Address the tokens will be issued to.
+    /// @param investment Invested amount in Wei
+    function issueTokens(address beneficiary, uint investment, bool sendToFounders)
         private
         applyBonus
         returns (uint)
@@ -88,24 +91,24 @@ contract HumaniqICO {
         uint tokenCount = investment / discountedPrice;
 
         // Ether spent by user.
-        uint rounded_investment = tokenCount * discountedPrice;
+        uint roundedInvestment = tokenCount * discountedPrice;
 
         // Send change back to user. TODO: Change this logic.
-        if (investment > rounded_investment && !msg.sender.send(investment - rounded_investment)) {
+        if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
             throw;
         }
 
         // Update fund's and user's balance and total supply of tokens.
-        icoBalance += rounded_investment;
-        investments[msg.sender] += rounded_investment;
+        icoBalance += roundedInvestment;
+        investments[beneficiary] += roundedInvestment;
 
-        // Send funds to founders.
-        if (!multisig.send(rounded_investment)) {
+        // Send funds to founders if investment was made 
+        if (sendToFounders && !multisig.send(roundedInvestment)) {
             // Could not send money
             throw;
         }
 
-        if (!humaniqToken.issueTokens(msg.sender, tokenCount)) {
+        if (!humaniqToken.issueTokens(beneficiary, tokenCount)) {
             // Tokens could not be issued.
             throw;
         }
@@ -122,7 +125,7 @@ contract HumaniqICO {
         payable
         returns (uint)
     {
-        return issueTokens(msg.value);
+        return issueTokens(msg.sender, msg.value, true);
     }
 
     /// @dev Issues tokens for users who made BTC purchases.
@@ -134,7 +137,7 @@ contract HumaniqICO {
         onlyFounder
         returns (uint)
     {
-        return issueTokens(investment);
+        return issueTokens(beneficiary, investment, false);
     }
 
     /// @dev If ICO has successfully finished sends the money to multisig

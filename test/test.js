@@ -79,4 +79,52 @@ contract('HumaniqICO', function(accounts) {
     });
   });
 
+  it("should invest 5 ETH via fundBTC()", function() {
+    var contract = HumaniqICO.deployed();
+    var token = HumaniqToken.deployed();
+
+    var bonus = 1.499; // we just started the ICO, therefore 49.9% bonus must be applied
+
+    // save initial balance of the investor
+    var initialBalance = web3.fromWei(web3.eth.getBalance(accounts[1]), "Ether");
+    assert.isAtLeast(initialBalance.toNumber(), 10, "Not enough money");
+
+    // save initial tokens
+    var initialTokens = token.balanceOf.call(accounts[1]);
+
+    // save initial token supply
+    var initialTokenSupply = token.totalSupply.call();
+
+    // save initial ICO balance
+    var initialICOBalance = contract.icoBalance.call();
+
+    return contract.fundBTC(accounts[1], // beneficiary
+                            web3.toWei(5, "Ether"),
+                            {from: accounts[0], // only owner can call this function
+                             gas: gasAmount}).then(function() {
+      return token.balanceOf.call(accounts[1]);
+    }).then(function(balance) {
+      // check that beneficiary received correct number of tokens
+      assert.closeTo(balance.toNumber(),
+                     (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
+                     0.0000001, // possible javascript computational error
+                     "Wrong number of tokens were given");
+
+      return token.totalSupply.call();
+    }).then(function(totalSupply) {
+      // check that totalSupply of tokens is correct
+      assert.closeTo(totalSupply.toNumber(),
+                     initialTokenSupply + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
+                     0.0000001, // possible javascript computational error
+                     "Wrong total supply");
+      return contract.icoBalance.call();
+    }).then(function(icoBalance) {
+      // check that ICO balance is correct
+      assert.equal(icoBalance.toNumber(),
+                   initialICOBalance + web3.toWei(5, "Ether"),
+                   "Wrong ICO balance");
+    });
+
+  });
+
 });
