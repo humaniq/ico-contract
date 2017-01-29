@@ -103,7 +103,7 @@ contract HumaniqICO {
         icoBalance += investment;
         investments[beneficiary] += roundedInvestment;
 
-        // Send funds to founders if investment was made 
+        // Send funds to founders if investment was made
         if (sendToFounders && !multisig.send(roundedInvestment)) {
             // Could not send money
             throw;
@@ -113,7 +113,7 @@ contract HumaniqICO {
             // Tokens could not be issued.
             throw;
         }
-        
+
         return tokenCount;
     }
 
@@ -150,12 +150,6 @@ contract HumaniqICO {
     {
         if (isICOActive == true) {
             isICOActive = false;
-            // Founders receive 14% of all created tokens.
-            uint founderBonus = ((icoBalance / baseTokenPrice) * 114) / 100;
-            if (!humaniqToken.issueTokens(multisig, founderBonus)) {
-                // Tokens could not be issued.
-                throw;
-            }
         }
     }
 
