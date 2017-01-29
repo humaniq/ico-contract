@@ -89,24 +89,29 @@ contract('HumaniqICO', function(accounts) {
     var initialBalance = web3.fromWei(web3.eth.getBalance(accounts[1]), "Ether");
     assert.isAtLeast(initialBalance.toNumber(), 10, "Not enough money");
 
-    // save initial tokens
-    var initialTokens = token.balanceOf.call(accounts[1]);
-
-    // save initial token supply
-    var initialTokenSupply = token.totalSupply.call();
-
-    // save initial ICO balance
-    var initialICOBalance = contract.icoBalance.call();
-
-    return contract.fundBTC(accounts[1], // beneficiary
+    var initialTokens, initialTokenSupply, initialICOBalance;
+    
+    token.balanceOf.call(accounts[1]).then(function(balance) {
+      // save initial tokens
+      initialTokens = balance.toNumber();
+      return token.totalSupply.call();
+    }).then(function(totalSupply) {
+      // save initial token supply
+      initialTokenSupply = totalSupply.toNumber();
+      return contract.icoBalance.call();
+    }).then(function(icoBalance) {
+      // save initial ICO balance
+      initialICOBalance = icoBalance.toNumber();
+      return contract.fundBTC(accounts[1], // beneficiary
                             web3.toWei(5, "Ether"),
                             {from: accounts[0], // only owner can call this function
-                             gas: gasAmount}).then(function() {
+                             gas: gasAmount});
+    }).then(function() {
       return token.balanceOf.call(accounts[1]);
     }).then(function(balance) {
       // check that beneficiary received correct number of tokens
       assert.closeTo(balance.toNumber(),
-                     (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
+                     initialTokens + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
                      0.0000001, // possible javascript computational error
                      "Wrong number of tokens were given");
 
@@ -121,7 +126,7 @@ contract('HumaniqICO', function(accounts) {
     }).then(function(icoBalance) {
       // check that ICO balance is correct
       assert.equal(icoBalance.toNumber(),
-                   initialICOBalance + web3.toWei(5, "Ether"),
+                   initialICOBalance + parseInt(web3.toWei(5, "Ether")),
                    "Wrong ICO balance");
     });
 

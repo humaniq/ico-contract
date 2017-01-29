@@ -82,6 +82,7 @@ contract HumaniqICO {
     /// @dev Issues tokens
     /// @param beneficiary Address the tokens will be issued to.
     /// @param investment Invested amount in Wei
+    /// @param sendToFounders Whether to send received ethers to multisig address or not
     function issueTokens(address beneficiary, uint investment, bool sendToFounders)
         private
         applyBonus
@@ -94,12 +95,12 @@ contract HumaniqICO {
         uint roundedInvestment = tokenCount * discountedPrice;
 
         // Send change back to user. TODO: Change this logic.
-        if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
-            throw;
-        }
+    //    if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
+    //        throw;
+    //    }
 
         // Update fund's and user's balance and total supply of tokens.
-        icoBalance += roundedInvestment;
+        icoBalance += investment;
         investments[beneficiary] += roundedInvestment;
 
         // Send funds to founders if investment was made 
