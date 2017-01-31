@@ -57,26 +57,36 @@ contract HumaniqICO {
     }
 
     modifier applyBonus() {
+        discountedPrice = (baseTokenPrice * 1000) / getBonus();
+        _;
+    }
+
+
+    /// @dev Returns current bonus
+    function getBonus()
+        public
+        constant
+        returns (uint)
+    {
         uint icoDuration = now - startDate;
         if (icoDuration >= 4 weeks) {
-            discountedPrice = baseTokenPrice;
+            return 1000;  // 0%
         }
         else if (icoDuration >= 3 weeks) {
-            discountedPrice = (baseTokenPrice * 100) / 107;
+            return 1070;  // 7%
         }
         else if (icoDuration >= 2 weeks) {
-            discountedPrice = (baseTokenPrice * 100) / 114;
+            return 1140;  // 14%
         }
         else if (icoDuration >= 1 weeks) {
-            discountedPrice = (baseTokenPrice * 100) / 120;
+            return 1200;  // 20%
         }
         else if (icoDuration >= 1 days) {
-            discountedPrice = (baseTokenPrice * 100) / 133;
+            return 1330;  // 33%
         }
         else {
-            discountedPrice = (baseTokenPrice * 1000) / 1499;
+            return 1499;  // 49.9%
         }
-        _;
     }
 
     /// @dev Issues tokens

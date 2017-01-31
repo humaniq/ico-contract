@@ -102,6 +102,7 @@ contract('HumaniqICO', function(accounts) {
     }).then(function(icoBalance) {
       // save initial ICO balance
       initialICOBalance = icoBalance.toNumber();
+      // fix 5 ETH investment using fundBTC()
       return contract.fundBTC(accounts[1], // beneficiary
                             web3.toWei(5, "Ether"),
                             {from: accounts[0], // only owner can call this function
@@ -130,6 +131,15 @@ contract('HumaniqICO', function(accounts) {
                    "Wrong ICO balance");
     });
 
+  });
+
+  it("should return current bonus", function() {
+    var contract = HumaniqICO.deployed();
+
+    return contract.getBonus.call({from: accounts[0]}).then(function(discount) {
+      // check that ICO is not active yet
+      console.log("bonus: " + discount);
+    });
   });
 
 });
