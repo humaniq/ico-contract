@@ -23,6 +23,7 @@ contract HumaniqICO {
     address public multisig;
     uint public startDate = 0;
     uint public icoBalance = 0;
+    uint public coinsIssued = 0;
     uint public baseTokenPrice = 1 finney; // 0.001 ETH
     uint public discountedPrice = baseTokenPrice;
     bool public isICOActive = false;
@@ -111,6 +112,7 @@ contract HumaniqICO {
 
         // Update fund's and user's balance and total supply of tokens.
         icoBalance += investment;
+        coinsIssued += tokenCount;
         investments[beneficiary] += roundedInvestment;
 
         // Send funds to founders if investment was made
@@ -161,7 +163,7 @@ contract HumaniqICO {
         if (isICOActive == true) {
             isICOActive = false;
             // Founders receive 14% of all created tokens.
-             uint founderBonus = ((icoBalance / baseTokenPrice) * 14) / 86;
+             uint founderBonus = (coinsIssued * 14) / 86;
              if (!humaniqToken.issueTokens(multisig, founderBonus)) {
                  // Tokens could not be issued.
                  throw;
