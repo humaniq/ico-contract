@@ -137,8 +137,8 @@ contract('HumaniqICO', function(accounts) {
     var contract = HumaniqICO.deployed();
 
     return contract.getBonus.call({from: accounts[0]}).then(function(discount) {
-      // check that ICO is not active yet
-      console.log("bonus: " + discount);
+      // check that IgetBonus() returns correct value
+      assert.equal((discount - 1000) / 10, 49.9, "Wrong bonus");
     });
   });
 
