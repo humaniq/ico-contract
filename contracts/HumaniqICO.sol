@@ -160,6 +160,12 @@ contract HumaniqICO {
     {
         if (isICOActive == true) {
             isICOActive = false;
+            // Founders receive 14% of all created tokens.
+             uint founderBonus = ((icoBalance / baseTokenPrice) * 14) / 86;
+             if (!humaniqToken.issueTokens(multisig, founderBonus)) {
+                 // Tokens could not be issued.
+                 throw;
+             }
         }
     }
 
