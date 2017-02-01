@@ -124,11 +124,13 @@ contract('HumaniqICO', function(accounts) {
             initialICOBalance = icoBalance.toNumber();
             // fix 5 ETH investment using fundBTC()
             return icoContract.fundBTC(icoInvestor, // beneficiary
-                web3.toWei(5, "Ether"), {
+                web3.toWei(5, "Ether"), // amount
+                Date.now() / 1000, // time of investment (in seconds)
+                {
                     from: icoOwner, // only owner can call this function
                     gas: gasAmount
                 });
-        }).then(function() {
+        }).then(function(tx_id) {
             return tokenContract.balanceOf.call(icoInvestor);
         }).then(function(balance) {
             // check that beneficiary received correct number of tokens

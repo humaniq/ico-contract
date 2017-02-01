@@ -57,19 +57,28 @@ contract HumaniqICO {
         _;
     }
 
-    modifier applyBonus() {
-        discountedPrice = (baseTokenPrice * 1000) / getBonus();
-        _;
-    }
-
-
     /// @dev Returns current bonus
-    function getBonus()
+    function getBonus() 
         public
         constant
         returns (uint)
     {
-        uint icoDuration = now - startDate;
+        return getBonus(now);
+    }
+
+    /// @dev Returns bonus for the specific moment
+    /// @param timestamp Time of investment (in seconds)
+    function getBonus(uint timestamp)
+        private
+        constant
+        returns (uint)
+    {
+
+        if (timestamp < startDate) {
+            throw;
+        }
+
+        uint icoDuration = timestamp - startDate;
         if (icoDuration >= 4 weeks) {
             return 1000;  // 0%
         }
@@ -93,12 +102,15 @@ contract HumaniqICO {
     /// @dev Issues tokens
     /// @param beneficiary Address the tokens will be issued to.
     /// @param investment Invested amount in Wei
+    /// @param timestamp Time of investment (in seconds)
     /// @param sendToFounders Whether to send received ethers to multisig address or not
-    function issueTokens(address beneficiary, uint investment, bool sendToFounders)
+    function issueTokens(address beneficiary, uint investment, uint timestamp, bool sendToFounders)
         private
-        applyBonus
         returns (uint)
     {
+        // calculate discountedPrice
+        discountedPrice = (baseTokenPrice * 1000) / getBonus(timestamp);
+
         // Token count is rounded down. Sent ETH should be multiples of baseTokenPrice.
         uint tokenCount = investment / discountedPrice;
 
@@ -138,19 +150,24 @@ contract HumaniqICO {
         payable
         returns (uint)
     {
-        return issueTokens(msg.sender, msg.value, true);
+        return issueTokens(msg.sender, msg.value, now, true);
     }
 
     /// @dev Issues tokens for users who made BTC purchases.
     /// @param beneficiary Address the tokens will be issued to.
     /// @param investment Invested amount in Wei
-    function fundBTC(address beneficiary, uint investment)
+    /// @param timestamp Time of investment (in seconds)
+    function fundBTC(address beneficiary, uint investment, uint timestamp)
         external
         icoActive
         onlyFounder
         returns (uint)
     {
-        return issueTokens(beneficiary, investment, false);
+        if (timestamp == 0) {
+            return issueTokens(beneficiary, investment, now, false);
+        }
+
+        return issueTokens(beneficiary, investment, timestamp, false);
     }
 
     /// @dev If ICO has successfully finished sends the money to multisig
