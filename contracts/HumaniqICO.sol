@@ -58,7 +58,7 @@ contract HumaniqICO {
     }
 
     /// @dev Returns current bonus
-    function getBonus() 
+    function getBonus()
         public
         constant
         returns (uint)
@@ -117,10 +117,10 @@ contract HumaniqICO {
         // Ether spent by user.
         uint roundedInvestment = tokenCount * discountedPrice;
 
-        // Send change back to user. TODO: Change this logic.
-    //    if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
-    //        throw;
-    //    }
+        // Send change back to user.
+        if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
+            throw;
+        }
 
         // Update fund's and user's balance and total supply of tokens.
         icoBalance += investment;
