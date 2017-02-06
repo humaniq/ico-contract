@@ -118,7 +118,7 @@ contract HumaniqICO {
         uint roundedInvestment = tokenCount * discountedPrice;
 
         // Send change back to user.
-        if (investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
+        if (sendToFounders && investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
             throw;
         }
 
