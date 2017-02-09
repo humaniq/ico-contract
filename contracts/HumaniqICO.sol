@@ -99,6 +99,17 @@ contract HumaniqICO {
         }
     }
 
+    function calculateTokens(uint investment, uint timestamp)
+        constant
+        returns (uint)
+    {
+        // calculate discountedPrice
+        discountedPrice = (baseTokenPrice * 1000) / getBonus(timestamp);
+
+        // Token count is rounded down. Sent ETH should be multiples of baseTokenPrice.
+        return investment / discountedPrice;
+    }
+
     /// @dev Issues tokens
     /// @param beneficiary Address the tokens will be issued to.
     /// @param investment Invested amount in Wei
@@ -108,11 +119,7 @@ contract HumaniqICO {
         private
         returns (uint)
     {
-        // calculate discountedPrice
-        discountedPrice = (baseTokenPrice * 1000) / getBonus(timestamp);
-
-        // Token count is rounded down. Sent ETH should be multiples of baseTokenPrice.
-        uint tokenCount = investment / discountedPrice;
+        uint tokenCount = calculateTokens(investment, timestamp);
 
         // Ether spent by user.
         uint roundedInvestment = tokenCount * discountedPrice;
