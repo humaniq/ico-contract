@@ -14,7 +14,7 @@ contract HumaniqICO {
     /*
      * Crowdfunding parameters
      */
-    uint constant public CROWDFUNDING_PERIOD = 39 days;
+    uint constant public CROWDFUNDING_PERIOD = 3 weeks;
 
     /*
      *  Storage
@@ -79,22 +79,13 @@ contract HumaniqICO {
         }
 
         uint icoDuration = timestamp - startDate;
-        if (icoDuration >= 4 weeks) {
+        if (icoDuration >= 16 days) {
             return 1000;  // 0%
-        }
-        else if (icoDuration >= 3 weeks) {
-            return 1070;  // 7%
-        }
-        else if (icoDuration >= 2 weeks) {
-            return 1140;  // 14%
-        }
-        else if (icoDuration >= 1 weeks) {
-            return 1200;  // 20%
-        }
-        else if (icoDuration >= 1 days) {
-            return 1330;  // 33%
-        }
-        else {
+        } else if (icoDuration >= 9 days) {
+            return 1125;  // 20%
+        } else if (icoDuration >= 2 days) {
+            return 1250;  // 33%
+        } else {
             return 1499;  // 49.9%
         }
     }
