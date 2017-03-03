@@ -1,6 +1,6 @@
 pragma solidity ^0.4.2;
 
-import "StandardToken.sol";
+import "./StandardToken.sol";
 
 /// @title Token contract - Implements Standard Token Interface with HumaniQ features.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>

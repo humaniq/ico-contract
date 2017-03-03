@@ -1,6 +1,6 @@
 pragma solidity ^0.4.2;
 
-import "HumaniqToken.sol";
+import "./HumaniqToken.sol";
 
 /// @title HumaniqICO contract - Takes funds from users and issues tokens.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
@@ -69,7 +69,7 @@ contract HumaniqICO {
     /// @dev Returns bonus for the specific moment
     /// @param timestamp Time of investment (in seconds)
     function getBonus(uint timestamp)
-        private
+        public
         constant
         returns (uint)
     {
@@ -100,6 +100,7 @@ contract HumaniqICO {
     }
 
     function calculateTokens(uint investment, uint timestamp)
+        public
         constant
         returns (uint)
     {
@@ -164,7 +165,7 @@ contract HumaniqICO {
     /// @param beneficiary Address the tokens will be issued to.
     /// @param investment Invested amount in Wei
     /// @param timestamp Time of investment (in seconds)
-    function fundBTC(address beneficiary, uint investment, uint timestamp)
+    function fixInvestment(address beneficiary, uint investment, uint timestamp)
         external
         icoActive
         onlyFounder
@@ -220,9 +221,9 @@ contract HumaniqICO {
     }
 
     /// @dev Contract constructor function sets founder and multisig addresses.
-    function HumaniqICO(address _multisig, address token_address) {
+    function HumaniqICO(address _founder, address _multisig, address token_address) {
         // Set founder address
-        founder = msg.sender;
+        founder = _founder;
         // Set multisig address
         multisig = _multisig;
         // Set token address

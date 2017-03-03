@@ -1,6 +1,6 @@
 pragma solidity ^0.4.2;
 
-import "HumaniqToken.sol";
+import "./HumaniqToken.sol";
 
 /// @title HumaniqICO contract - Takes funds from users and issues tokens.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.2;
 
-import "AbstractToken.sol";
+import "./AbstractToken.sol";
 
 contract StandardToken is AbstractToken {
 
