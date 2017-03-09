@@ -176,55 +176,64 @@ contract('HumaniqICO', function(accounts) {
         }).then(done);
     });
 
-    // it("Should return current bonus", function(done) {
-    //     var icoContract = HumaniqICO.deployed();
+    it("Should return current bonus", function(done) {
+        var icoContract;
 
-    //     return icoContract.getBonus.call({
-    //         from: icoOwner
-    //     }).then(function(discount) {
-    //         // check that getBonus() returns correct value
-    //         assert.equal((discount - 1000) / 10, 49.9, "Wrong bonus");
-    //     }).then(done);
-    // });
+        HumaniqICO.deployed().then(function(instance) {
+            icoContract = instance;
+            return icoContract.getCurrentBonus.call({
+                from: icoOwner
+            });
+        }).then(function(discount) {
+            // check that getBonus() returns correct value
+            assert.equal((discount.toNumber() - 1000) / 10, 49.9, "Wrong bonus");
+        }).then(done);
+    });
 
-    // it("Should finish crowdsale and allocate founder bonus", function(done) {
-    //     // ICO Contract
-    //     var icoContract = HumaniqICO.deployed();
-    //     // Token contract
-    //     var tokenContract = HumaniqToken.deployed();
+    it("Should finish crowdsale and allocate founder bonus", function(done) {
+        // ICO Contract
+        var icoContract;
+        // Token contract
+        var tokenContract;
 
-    //     var icoTotalBalance = 0;
-    //     var totalCoinsIssued = 0;
+        var icoTotalBalance = 0;
+        var totalCoinsIssued = 0;
 
-    //     return icoContract.coinsIssued.call().then(function(coinsIssued) {
-    //         // save total number of tokens
-    //         totalCoinsIssued = coinsIssued.toNumber();
+        HumaniqICO.deployed().then(function(instance) {
+            icoContract = instance;
+            return HumaniqToken.deployed();
+        }).then(function(instance) {
+            tokenContract = instance;
+            return icoContract.coinsIssued.call();
+        }).then(function(coinsIssued) {
+            // save total number of tokens
+            totalCoinsIssued = coinsIssued.toNumber();
 
-    //         return icoContract.icoBalance.call();
-    //     }).then(function(icoBalance) {
-    //         // save ICO total balance
-    //         icoTotalBalance = icoBalance.toNumber();
+            return icoContract.icoBalance.call();
+        }).then(function(icoBalance) {
+            // save ICO total balance
+            icoTotalBalance = icoBalance.toNumber();
 
-    //         // finish crowdsale
-    //         return icoContract.finishCrowdsale({
-    //             from: icoOwner,
-    //             gas: gasAmount,
-    //             value: 0
-    //         });
-    //     }).then(function(tx_id) {
-    //         return icoContract.isICOActive.call();
-    //     }).then(function(isICOActive) {
-    //         // check that ICO was closed
-    //         assert.equal(isICOActive, false, "ICO wasn't closed");
+            // finish crowdsale
+            return icoContract.finishCrowdsale({
+                from: icoOwner,
+                gas: gasAmount,
+                value: 0
+            });
+        }).then(function(tx_id) {
+            return icoContract.isICOActive.call();
+        }).then(function(isICOActive) {
+            // check that ICO was closed
+            assert.equal(isICOActive, false, "ICO wasn't closed");
             
-    //         return tokenContract.balanceOf.call(multisig);
-    //     }).then(function(founderTokens) {
-    //         // founders are supposed to receive 14% of all issued tokens
-    //         var founderBonus = Math.floor((totalCoinsIssued / 86) * 14);
+            return tokenContract.balanceOf.call(multisig);
+        }).then(function(founderTokens) {
+            // founders are supposed to receive 14% of all issued tokens
+            var founderBonus = Math.floor((totalCoinsIssued / 86) * 14);
 
-    //         // check that founders received proper number of tokens
-    //         assert.equal(founderBonus, founderTokens.toNumber(), "Founders were not allocated with proper number of coins");
-    //     }).then(done);
-    // });
+            // check that founders received proper number of tokens
+            assert.equal(founderBonus, founderTokens.toNumber(), "Founders were not allocated with proper number of coins");
+        }).then(done);
+    });
 
 });

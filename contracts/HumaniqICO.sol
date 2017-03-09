@@ -58,7 +58,7 @@ contract HumaniqICO {
     }
 
     /// @dev Returns current bonus
-    function getBonus()
+    function getCurrentBonus()
         public
         constant
         returns (uint)
@@ -75,16 +75,16 @@ contract HumaniqICO {
     {
 
         if (timestamp < startDate) {
-            throw;
+            return 1499; // 49.9%
         }
 
         uint icoDuration = timestamp - startDate;
         if (icoDuration >= 16 days) {
             return 1000;  // 0%
         } else if (icoDuration >= 9 days) {
-            return 1125;  // 20%
+            return 1125;  // 12.5%
         } else if (icoDuration >= 2 days) {
-            return 1250;  // 33%
+            return 1250;  // 25%
         } else {
             return 1499;  // 49.9%
         }
