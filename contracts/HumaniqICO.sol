@@ -198,6 +198,20 @@ contract HumaniqICO {
         return true;
     }
 
+    function changeTokenAddress(address token_address) 
+        public
+        onlyFounder
+    {
+         humaniqToken = HumaniqToken(token_address);
+    }
+
+    function changeFounder(address _founder) 
+        public
+        onlyFounder
+    {
+        founder = _founder;
+    }
+
     /// @dev Function that activates ICO.
     function startICO()
         external
