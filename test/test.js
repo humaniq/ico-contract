@@ -13,6 +13,22 @@ contract('HumaniqICO', function(accounts) {
     // Regular HumaniQ investor
     var icoInvestor = accounts[1];
 
+    it("Should check bonus before start of the ICO", function(done) {
+        // ICO Contract
+        var icoContract;
+
+        HumaniqICO.deployed().then(function(instance) {
+            icoContract = instance;
+            return icoContract.isICOActive.call(icoOwner);
+        }).then(function(isICOActive) {
+            // check that ICO is not active yet
+            assert.equal(isICOActive, false, "ICO is already activated");
+            return icoContract.getCurrentBonus.call(icoOwner);
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
+        }).then(done);
+    });
+
     it("Should start ICO", function(done) {
         // ICO Contract
         var icoContract;

@@ -74,7 +74,7 @@ contract HumaniqICO {
         returns (uint)
     {
 
-        if (timestamp < startDate) {
+        if (startDate == 0) {
             return 1499; // 49.9%
         }
 
