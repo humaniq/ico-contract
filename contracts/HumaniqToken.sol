@@ -16,7 +16,7 @@ contract HumaniqToken is StandardToken {
      */
     string constant public name = "HumaniQ";
     string constant public symbol = "HMQ";
-    uint8 constant public decimals = 0;
+    uint8 constant public decimals = 8;
 
     address public founder = 0x0;
     bool locked = true;
