@@ -65,6 +65,7 @@ contract HumaniqToken is StandardToken {
         }
         balances[_for] += tokenCount;
         totalSupply += tokenCount;
+        Issuance(_for, tokenCount);
         return true;
     }
 
