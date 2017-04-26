@@ -1,10 +1,11 @@
-pragma solidity ^0.4.2;
+pragma solidity ^0.4.6;
 
 import "./StandardToken.sol";
+import "./SafeMath.sol";
 
 /// @title Token contract - Implements Standard Token Interface with HumaniQ features.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
-contract HumaniqToken is StandardToken {
+contract HumaniqToken is StandardToken, SafeMath {
 
     /*
      * External contracts
@@ -20,6 +21,10 @@ contract HumaniqToken is StandardToken {
 
     address public founder = 0x0;
     bool locked = true;
+
+    // The actual number will be supplied after the end of the ICO.
+    uint public maxTotalSupply = 5 * 100000000 * 100000000;
+
     /*
      * Modifiers
      */
@@ -63,8 +68,11 @@ contract HumaniqToken is StandardToken {
         if (tokenCount == 0) {
             return false;
         }
-        balances[_for] += tokenCount;
-        totalSupply += tokenCount;
+        if (add(totalSupply, tokenCount) > maxTotalSupply) {
+          throw;
+        }
+        totalSupply = add(totalSupply, tokenCount);
+        balances[_for] = add(balances[_for], tokenCount);
         Issuance(_for, tokenCount);
         return true;
     }

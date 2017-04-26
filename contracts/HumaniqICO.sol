@@ -1,4 +1,4 @@
-pragma solidity ^0.4.2;
+pragma solidity ^0.4.6;
 
 import "./HumaniqToken.sol";
 
@@ -198,14 +198,14 @@ contract HumaniqICO {
         return true;
     }
 
-    function changeTokenAddress(address token_address) 
+    function changeTokenAddress(address token_address)
         public
         onlyFounder
     {
          humaniqToken = HumaniqToken(token_address);
     }
 
-    function changeFounder(address _founder) 
+    function changeFounder(address _founder)
         public
         onlyFounder
     {
