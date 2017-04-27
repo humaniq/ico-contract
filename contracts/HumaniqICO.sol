@@ -1,20 +1,16 @@
 pragma solidity ^0.4.6;
 
 import "./HumaniqToken.sol";
+import "./SafeMath.sol";
 
 /// @title HumaniqICO contract - Takes funds from users and issues tokens.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
-contract HumaniqICO {
+contract HumaniqICO is SafeMath {
 
     /*
      * External contracts
      */
     HumaniqToken public humaniqToken;
-
-    /*
-     * Crowdfunding parameters
-     */
-    uint constant public CROWDFUNDING_PERIOD = 3 weeks;
 
     /*
      *  Storage
@@ -96,10 +92,10 @@ contract HumaniqICO {
         returns (uint)
     {
         // calculate discountedPrice
-        discountedPrice = (baseTokenPrice * 1000) / getBonus(timestamp);
+        discountedPrice = div(mul(baseTokenPrice, 1000), getBonus(timestamp));
 
         // Token count is rounded down. Sent ETH should be multiples of baseTokenPrice.
-        return investment / discountedPrice;
+        return div(investment, discountedPrice);
     }
 
     /// @dev Issues tokens
@@ -114,25 +110,25 @@ contract HumaniqICO {
         uint tokenCount = calculateTokens(investment, timestamp);
 
         // Ether spent by user.
-        uint roundedInvestment = tokenCount * discountedPrice;
+        uint roundedInvestment = mul(tokenCount, discountedPrice);
 
         // Send change back to user.
-        if (sendToFounders && investment > roundedInvestment && !beneficiary.send(investment - roundedInvestment)) {
+        if (sendToFounders && investment > roundedInvestment && !beneficiary.send(sub(investment, roundedInvestment))) {
             throw;
         }
 
         // Update fund's and user's balance and total supply of tokens.
-        icoBalance += investment;
-        coinsIssued += tokenCount;
-        investments[beneficiary] += roundedInvestment;
+        icoBalance = add(icoBalance, investment);
+        coinsIssued = add(coinsIssued, tokenCount);
+        investments[beneficiary] = add(investments[beneficiary], roundedInvestment);
 
         // Send funds to founders if investment was made
         if (sendToFounders && !multisig.send(roundedInvestment)) {
             // Could not send money
             throw;
         }
-
-        if (!humaniqToken.issueTokens(beneficiary, tokenCount)) {
+        // Issue tokens.
+        if (!humaniqToken.issueTokens(beneficiary, mul(tokenCount, 100000000))) {
             // Tokens could not be issued.
             throw;
         }
@@ -179,10 +175,14 @@ contract HumaniqICO {
         if (isICOActive == true) {
             isICOActive = false;
             // Founders receive 14% of all created tokens.
-             uint founderBonus = (coinsIssued * 14) / 86;
-             if (!humaniqToken.issueTokens(multisig, founderBonus)) {
+             uint founderBonus = div(mul(coinsIssued, 14), 86);
+             if (!humaniqToken.issueTokens(multisig, mul(founderBonus, 100000000))) {
                  // Tokens could not be issued.
                  throw;
+             }
+             coinsIssued = add(coinsIssued, founderBonus);
+             if (!humaniqToken.finalizeMaxTotalSupply(mul(coinsIssued, 100000000))) {
+               throw;
              }
         }
     }

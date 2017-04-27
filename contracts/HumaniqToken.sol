@@ -20,10 +20,11 @@ contract HumaniqToken is StandardToken, SafeMath {
     uint8 constant public decimals = 8;
 
     address public founder = 0x0;
-    bool locked = true;
+    bool public locked = true;
 
-    // The actual number will be supplied after the end of the ICO.
-    uint public maxTotalSupply = 5 * 100000000 * 100000000;
+    bool public icoFinished = false;
+    // Zero initially and will be set after the end of the ICO by calling finalizeMaxTotalSupply.
+    uint public maxTotalSupply = 0;
 
     /*
      * Modifiers
@@ -68,9 +69,11 @@ contract HumaniqToken is StandardToken, SafeMath {
         if (tokenCount == 0) {
             return false;
         }
-        if (add(totalSupply, tokenCount) > maxTotalSupply) {
+        
+        if (icoFinished && add(totalSupply, tokenCount) > maxTotalSupply) {
           throw;
         }
+        
         totalSupply = add(totalSupply, tokenCount);
         balances[_for] = add(balances[_for], tokenCount);
         Issuance(_for, tokenCount);
@@ -108,6 +111,21 @@ contract HumaniqToken is StandardToken, SafeMath {
         onlyFounder
     {
         locked = value;
+    }
+
+    /// @dev Finalization of maxTotalSupply after the ICO.
+    function finalizeMaxTotalSupply(uint coinsIssued)
+      external
+      isCrowdfundingContract
+      returns (bool)
+    {
+      if (icoFinished) {
+        return false;
+      }
+      icoFinished = true;
+      // Set max total supply of coins to be 5X after an ICO.
+      maxTotalSupply = mul(coinsIssued, 5);
+      return true;
     }
 
     /// @dev Contract constructor function sets initial token balances.

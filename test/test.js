@@ -1,5 +1,6 @@
 var gasAmount = 4000000;
 var baseTokenPrice = web3.toWei(0.001, "Ether");
+var decimalDevider = 100000000;
 
 var HumaniqICO = artifacts.require("./HumaniqICO.sol");
 var HumaniqToken = artifacts.require("./HumaniqToken.sol");
@@ -71,10 +72,10 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(instance) {
             tokenContract = instance;
             console.log("change emission address");
-            return tokenContract.changeEmissionContractAddress(icoContract.address, { 
-                            from: icoOwner, // only owner can call this function
-                            gas: gasAmount
-                    });
+            return tokenContract.changeEmissionContractAddress(icoContract.address, {
+              from: icoOwner, // only owner can call this function
+              gas: gasAmount
+            });
         }).then(function(tx_id) {
             console.log("check contract");
             return tokenContract.emissionContractAddress.call(icoInvestor);
@@ -106,7 +107,8 @@ contract('HumaniqICO', function(accounts) {
                 "Wrong number of ether was spent");
 
             // check that investor received correct number of tokens
-            assert.closeTo(balance.toNumber(),
+            console.log(balance.toNumber() / decimalDevider, "tokens were issued for 10 Ether");
+            assert.closeTo(balance.toNumber() / decimalDevider,
                 (web3.toWei(10, "Ether") / baseTokenPrice) * bonus,
                 0.0000001, // possible javascript computational error
                 "Wrong number of tokens was given");
@@ -115,13 +117,12 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(totalSupply) {
             console.log("icoBalance");
             // check that totalSupply of tokens is correct
-            assert.closeTo(totalSupply.toNumber(),
+            assert.closeTo(totalSupply.toNumber() / decimalDevider,
                 (web3.toWei(10, "Ether") / baseTokenPrice) * bonus,
                 0.0000001, // possible javascript computational error
                 "Wrong total supply");
             return icoContract.icoBalance.call();
         }).then(function(icoBalance) {
-            console.log("well done");
             // check that ICO balance is correct
             assert.equal(icoBalance.toNumber(), web3.toWei(10, "Ether"), "Wrong ICO balance");
         }).then(done).catch(done);
@@ -150,11 +151,11 @@ contract('HumaniqICO', function(accounts) {
             return tokenContract.balanceOf.call(icoInvestor);
         }).then(function(balance) {
             // save initial tokens
-            initialTokens = balance.toNumber();
+            initialTokens = balance.toNumber() / decimalDevider;
             return tokenContract.totalSupply.call();
         }).then(function(totalSupply) {
             // save initial token supply
-            initialTokenSupply = totalSupply.toNumber();
+            initialTokenSupply = totalSupply.toNumber() / decimalDevider;
             return icoContract.icoBalance.call();
         }).then(function(icoBalance) {
             // save initial ICO balance
@@ -171,15 +172,16 @@ contract('HumaniqICO', function(accounts) {
             return tokenContract.balanceOf.call(icoInvestor);
         }).then(function(balance) {
             // check that beneficiary received correct number of tokens
-            assert.closeTo(balance.toNumber(),
+
+            assert.closeTo(balance.toNumber() / decimalDevider,
                 initialTokens + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
                 0.0000001, // possible javascript computational error
                 "Wrong number of tokens was given");
-
+            console.log(balance.toNumber() / decimalDevider - initialTokens, "tokens were issued for 5 Ether");
             return tokenContract.totalSupply.call();
         }).then(function(totalSupply) {
             // check that totalSupply of tokens is correct
-            assert.closeTo(totalSupply.toNumber(),
+            assert.closeTo(totalSupply.toNumber() / decimalDevider,
                 initialTokenSupply + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
                 0.0000001, // possible javascript computational error
                 "Wrong total supply");
@@ -241,14 +243,20 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(isICOActive) {
             // check that ICO was closed
             assert.equal(isICOActive, false, "ICO wasn't closed");
-            
+
             return tokenContract.balanceOf.call(multisig);
         }).then(function(founderTokens) {
             // founders are supposed to receive 14% of all issued tokens
             var founderBonus = Math.floor((totalCoinsIssued / 86) * 14);
-
+            totalCoinsIssued += founderBonus;
             // check that founders received proper number of tokens
-            assert.equal(founderBonus, founderTokens.toNumber(), "Founders were not allocated with proper number of coins");
+            assert.equal(founderBonus, founderTokens.toNumber() / decimalDevider, "Founders were not allocated with proper number of coins");
+            return tokenContract.maxTotalSupply.call();
+        }).then(function(maxTotalSupply) {
+            // Check that maxTotalSupply was set correctly.
+            assert.equal(totalCoinsIssued * 5, maxTotalSupply.toNumber() / decimalDevider, "Max Total Supply is incorrect.");
+            console.log("totalCoinsIssued = ", totalCoinsIssued);
+            console.log("maxTotalSupply = ", maxTotalSupply.toNumber() / decimalDevider);
         }).then(done);
     });
 
