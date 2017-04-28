@@ -20,10 +20,8 @@ contract HumaniqToken is StandardToken, SafeMath {
     uint8 constant public decimals = 8;
 
     address public founder = 0x0;
-    bool public locked = true;
+    address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
-    bool public icoFinished = false;
-    // Zero initially and will be set after the end of the ICO by calling finalizeMaxTotalSupply.
     uint public maxTotalSupply = 0;
 
     /*
@@ -45,14 +43,6 @@ contract HumaniqToken is StandardToken, SafeMath {
         _;
     }
 
-    modifier unlocked() {
-        // Only when transferring coins is enabled.
-        if (locked == true) {
-            throw;
-        }
-        _;
-    }
-
     /*
      * Contract functions
      */
@@ -69,70 +59,43 @@ contract HumaniqToken is StandardToken, SafeMath {
         if (tokenCount == 0) {
             return false;
         }
-        
-        if (icoFinished && add(totalSupply, tokenCount) > maxTotalSupply) {
+
+        if (add(totalSupply, tokenCount) > maxTotalSupply) {
           throw;
         }
-        
+
         totalSupply = add(totalSupply, tokenCount);
         balances[_for] = add(balances[_for], tokenCount);
         Issuance(_for, tokenCount);
         return true;
     }
 
-    function transfer(address _to, uint256 _value)
-        unlocked
-        returns (bool success)
-    {
-        return super.transfer(_to, _value);
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value)
-        unlocked
-        returns (bool success)
-    {
-        return super.transferFrom(_from, _to, _value);
-    }
-
     /// @dev Function to change address that is allowed to do emission.
     /// @param newAddress Address of new emission contract.
     function changeEmissionContractAddress(address newAddress)
-        external
+        public
         onlyFounder
         returns (bool)
     {
         emissionContractAddress = newAddress;
     }
 
-    /// @dev Function that locks/unlocks transfers of token.
-    /// @param value True/False
-    function lock(bool value)
-        external
-        onlyFounder
-    {
-        locked = value;
-    }
-
-    /// @dev Finalization of maxTotalSupply after the ICO.
-    function finalizeMaxTotalSupply(uint coinsIssued)
-      external
-      isCrowdfundingContract
-      returns (bool)
-    {
-      if (icoFinished) {
-        return false;
-      }
-      icoFinished = true;
-      // Set max total supply of coins to be 5X after an ICO.
-      maxTotalSupply = mul(coinsIssued, 5);
-      return true;
-    }
-
     /// @dev Contract constructor function sets initial token balances.
     /// @param _founder Address of the founder of HumaniQ.
     function HumaniqToken(address _founder)
     {
-        totalSupply = 0;
         founder = _founder;
+
+        // Allocate all created tokens to allocationAddress.
+        balances[allocationAddress] = 120000000 * 10 ** decimals;
+        // Allow founder to distribute them.
+        allowed[allocationAddress][_founder] = 120000000 * 10 ** decimals;
+
+        // Give 14 percent of all tokens to founders.
+        balances[_founder] = div(mul(balances[allocationAddress], 14), 86);
+
+        // Set correct totalSupply and limit maximum total supply.
+        totalSupply = add(balances[allocationAddress], balances[_founder]);
+        maxTotalSupply = mul(totalSupply, 5);
     }
 }

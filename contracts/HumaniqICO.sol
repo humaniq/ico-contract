@@ -181,9 +181,6 @@ contract HumaniqICO is SafeMath {
                  throw;
              }
              coinsIssued = add(coinsIssued, founderBonus);
-             if (!humaniqToken.finalizeMaxTotalSupply(mul(coinsIssued, 100000000))) {
-               throw;
-             }
         }
     }
 

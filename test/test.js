@@ -88,7 +88,6 @@ contract('HumaniqICO', function(accounts) {
             console.log("fund");
             assert.equal(balance.toNumber(), 0, "Not null balance");
             tokens = balance;
-
             return icoContract.fund({
                 from: icoInvestor,
                 gas: gasAmount,
@@ -226,7 +225,6 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(coinsIssued) {
             // save total number of tokens
             totalCoinsIssued = coinsIssued.toNumber();
-
             return icoContract.icoBalance.call();
         }).then(function(icoBalance) {
             // save ICO total balance
@@ -251,12 +249,6 @@ contract('HumaniqICO', function(accounts) {
             totalCoinsIssued += founderBonus;
             // check that founders received proper number of tokens
             assert.equal(founderBonus, founderTokens.toNumber() / decimalDevider, "Founders were not allocated with proper number of coins");
-            return tokenContract.maxTotalSupply.call();
-        }).then(function(maxTotalSupply) {
-            // Check that maxTotalSupply was set correctly.
-            assert.equal(totalCoinsIssued * 5, maxTotalSupply.toNumber() / decimalDevider, "Max Total Supply is incorrect.");
-            console.log("totalCoinsIssued = ", totalCoinsIssued);
-            console.log("maxTotalSupply = ", maxTotalSupply.toNumber() / decimalDevider);
         }).then(done);
     });
 
