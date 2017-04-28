@@ -22,7 +22,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     address public founder = 0x0;
     address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
-    uint public maxTotalSupply = 0;
+    uint public maxTotalSupply;
 
     /*
      * Modifiers
@@ -87,9 +87,9 @@ contract HumaniqToken is StandardToken, SafeMath {
         founder = _founder;
 
         // Allocate all created tokens to allocationAddress.
-        balances[allocationAddress] = 120000000 * 10 ** decimals;
+        balances[allocationAddress] = 120000000 * 100000000;
         // Allow founder to distribute them.
-        allowed[allocationAddress][_founder] = 120000000 * 10 ** decimals;
+        allowed[allocationAddress][_founder] = 120000000 * 100000000;
 
         // Give 14 percent of all tokens to founders.
         balances[_founder] = div(mul(balances[allocationAddress], 14), 86);

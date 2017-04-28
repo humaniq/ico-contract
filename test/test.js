@@ -64,7 +64,7 @@ contract('HumaniqICO', function(accounts) {
         var initialBalance = web3.fromWei(web3.eth.getBalance(icoInvestor), "Ether");
         assert.isAtLeast(initialBalance.toNumber(), 10, "Not enough money");
 
-        var tokens;
+        var tokens, initialTokenSupply;
 
         HumaniqICO.deployed().then(function(instance) {
             icoContract = instance;
@@ -83,6 +83,10 @@ contract('HumaniqICO', function(accounts) {
             // check that emissionContractAddress was successfuly changed
             assert.equal(emissionContractAddress, icoContract.address, "emissionContractAddress wasn't changed");
 
+            return tokenContract.totalSupply.call();
+        }).then(function(totalSupply) {
+            // save initial token supply
+            initialTokenSupply = totalSupply.toNumber() / decimalDevider;
             return tokenContract.balanceOf.call(icoInvestor);
         }).then(function(balance) {
             console.log("fund");
@@ -116,7 +120,7 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(totalSupply) {
             console.log("icoBalance");
             // check that totalSupply of tokens is correct
-            assert.closeTo(totalSupply.toNumber() / decimalDevider,
+            assert.closeTo(totalSupply.toNumber() / decimalDevider - initialTokenSupply,
                 (web3.toWei(10, "Ether") / baseTokenPrice) * bonus,
                 0.0000001, // possible javascript computational error
                 "Wrong total supply");
@@ -215,6 +219,7 @@ contract('HumaniqICO', function(accounts) {
 
         var icoTotalBalance = 0;
         var totalCoinsIssued = 0;
+        var initialFounderBalance = 0;
 
         HumaniqICO.deployed().then(function(instance) {
             icoContract = instance;
@@ -225,6 +230,9 @@ contract('HumaniqICO', function(accounts) {
         }).then(function(coinsIssued) {
             // save total number of tokens
             totalCoinsIssued = coinsIssued.toNumber();
+            return tokenContract.balanceOf.call(icoOwner);
+        }).then(function(balance) {
+            initialFounderBalance = balance.toNumber();
             return icoContract.icoBalance.call();
         }).then(function(icoBalance) {
             // save ICO total balance
@@ -248,7 +256,7 @@ contract('HumaniqICO', function(accounts) {
             var founderBonus = Math.floor((totalCoinsIssued / 86) * 14);
             totalCoinsIssued += founderBonus;
             // check that founders received proper number of tokens
-            assert.equal(founderBonus, founderTokens.toNumber() / decimalDevider, "Founders were not allocated with proper number of coins");
+            assert.equal(founderBonus, (founderTokens.toNumber() - initialFounderBalance) / decimalDevider, "Founders were not allocated with proper number of coins");
         }).then(done);
     });
 
