@@ -71,17 +71,17 @@ contract('HumaniqICO', function(accounts) {
             return HumaniqToken.deployed();
         }).then(function(instance) {
             tokenContract = instance;
-            console.log("change emission address");
-            return tokenContract.changeEmissionContractAddress(icoContract.address, {
+            console.log("change minter");
+            return tokenContract.changeMinter(icoContract.address, {
               from: icoOwner, // only owner can call this function
               gas: gasAmount
             });
         }).then(function(tx_id) {
             console.log("check contract");
-            return tokenContract.emissionContractAddress.call(icoInvestor);
-        }).then(function(emissionContractAddress) {
-            // check that emissionContractAddress was successfuly changed
-            assert.equal(emissionContractAddress, icoContract.address, "emissionContractAddress wasn't changed");
+            return tokenContract.minter.call(icoInvestor);
+        }).then(function(minterAddress) {
+            // check that minterAddress was successfuly changed
+            assert.equal(minterAddress, icoContract.address, "minterAddress wasn't changed");
 
             return tokenContract.totalSupply.call();
         }).then(function(totalSupply) {

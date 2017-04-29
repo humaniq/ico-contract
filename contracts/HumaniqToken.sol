@@ -10,7 +10,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     /*
      * External contracts
      */
-    address public minter = 0x0;
+    address public minter;
 
     /*
      * Token meta data
@@ -19,7 +19,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     string constant public symbol = "HMQ";
     uint8 constant public decimals = 8;
 
-    address public founder = 0x0;
+    address public founder;
     address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
     uint public maxTotalSupply;
@@ -35,7 +35,7 @@ contract HumaniqToken is StandardToken, SafeMath {
         _;
     }
 
-    modifier isCrowdfundingContract() {
+    modifier isMinter() {
         // Only minter is allowed to proceed.
         if (msg.sender != minter) {
             throw;
@@ -53,7 +53,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     function issueTokens(address _for, uint tokenCount)
         external
         payable
-        isCrowdfundingContract
+        isMinter
         returns (bool)
     {
         if (tokenCount == 0) {
