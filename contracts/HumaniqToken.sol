@@ -10,7 +10,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     /*
      * External contracts
      */
-    address public emissionContractAddress = 0x0;
+    address public minter = 0x0;
 
     /*
      * Token meta data
@@ -36,8 +36,8 @@ contract HumaniqToken is StandardToken, SafeMath {
     }
 
     modifier isCrowdfundingContract() {
-        // Only emission address is allowed to proceed.
-        if (msg.sender != emissionContractAddress) {
+        // Only minter is allowed to proceed.
+        if (msg.sender != minter) {
             throw;
         }
         _;
@@ -72,12 +72,12 @@ contract HumaniqToken is StandardToken, SafeMath {
 
     /// @dev Function to change address that is allowed to do emission.
     /// @param newAddress Address of new emission contract.
-    function changeEmissionContractAddress(address newAddress)
+    function changeMinter(address newAddress)
         public
         onlyFounder
         returns (bool)
     {
-        emissionContractAddress = newAddress;
+        minter = newAddress;
     }
 
     /// @dev Contract constructor function sets initial token balances.
@@ -89,7 +89,7 @@ contract HumaniqToken is StandardToken, SafeMath {
         // Allocate all created tokens to allocationAddress.
         balances[allocationAddress] = 120000000 * 100000000;
         // Allow founder to distribute them.
-        allowed[allocationAddress][_founder] = 120000000 * 100000000;
+        allowed[allocationAddress][minter] = 120000000 * 100000000;
 
         // Give 14 percent of all tokens to founders.
         balances[_founder] = div(mul(balances[allocationAddress], 14), 86);
