@@ -27,16 +27,16 @@ contract HumaniqToken is StandardToken, SafeMath {
     address public multisig = 0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883;
 
     // Address where all tokens created during ICO stage initially allocated
-    address public allocationAddressICO = 0x1111111111111111111111111111111111111111;
+    address constant public allocationAddressICO = 0x1111111111111111111111111111111111111111;
 
     // Address where all tokens created during preICO stage initially allocated
-    address public allocationAddressPreICO = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    address constant public allocationAddressPreICO = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     // 31 820 314 tokens were minted during preICO
-    uint public preICOSupply = mul(31820314, 100000000);
+    uint constant public preICOSupply = mul(31820314, 100000000);
 
     // 130 158 351 tokens were minted during ICO
-    uint public ICOSupply = mul(130158351, 100000000);
+    uint constant public ICOSupply = mul(130158351, 100000000);
 
     // Max number of tokens that can be minted
     uint public maxTotalSupply;

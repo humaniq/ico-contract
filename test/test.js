@@ -5,9 +5,6 @@ var decimalDevider = 100000000;
 var HumaniqICO = artifacts.require("./HumaniqICO.sol");
 var HumaniqToken = artifacts.require("./HumaniqToken.sol");
 
-// Multisig address
-var multisig = "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883";
-
 contract('HumaniqICO', function(accounts) {
     // Owner of the contract
     var founder = accounts[0];
@@ -15,8 +12,20 @@ contract('HumaniqICO', function(accounts) {
     // Start date of the ICO
     var startICODate = 1491433200;  // 2017-04-05 23:00:00 UTC
 
+    // Multisig address
+    var multisig = "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883";
+
     // Address where all tokens created during ICO stage initially allocated
     var allocationAddress = "0x1111111111111111111111111111111111111111";
+
+    // Number of tokens minted during ICO
+    var ICOsupply = 130158351 * 100000000;
+
+    // Number of tokens minted during preICO
+    var preICOsupply = 31820314 * 100000000;
+
+    // Number of tokens founders are supposed to receive
+    var foundersBalance = Math.floor((ICOsupply * 14) / 86);
 
     it("Should verify start date", function(done) {
         HumaniqICO.deployed().then(function(instance) {
@@ -37,6 +46,22 @@ contract('HumaniqICO', function(accounts) {
             return instance.allocationAddressICO.call();
         }).then(function(address) {
             assert.equal(address, allocationAddress, "Token Contract Allocation address should be equal to 0x1111111111111111111111111111111111111111");
+        }).then(done);
+    });
+
+    it("Should verify founders balance", function(done) {
+        HumaniqToken.deployed().then(function(instance) {
+            return instance.balanceOf.call(multisig);
+        }).then(function(balance) {
+            assert.equal(balance.toNumber(), foundersBalance, "Wrong founders balance");
+        }).then(done);
+    });
+
+    it("Should verify max total supply", function(done) {
+        HumaniqToken.deployed().then(function(instance) {
+            return instance.maxTotalSupply.call();
+        }).then(function(supply) {
+            assert.equal(supply.toNumber(), 5 * (ICOsupply + foundersBalance + preICOsupply), "Wrong max total supply");
         }).then(done);
     });
 
