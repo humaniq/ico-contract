@@ -11,8 +11,8 @@ module.exports = function(deployer, network) {
         founder = "0xaec3ae5d2be00bfc91597d7a1b2c43818d84396a";
     }    
 
-	deployer.deploy(HumaniqToken).then(function() {
-        return deployer.deploy(HumaniqICO, HumaniqToken.address);
+	deployer.deploy(HumaniqToken, founder).then(function() {
+        return deployer.deploy(HumaniqICO, HumaniqToken.address, founder);
     }).then(function(tx) {
         return HumaniqToken.deployed();
     }).then(function(tokenContract) {

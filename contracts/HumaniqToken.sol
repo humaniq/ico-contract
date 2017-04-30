@@ -21,8 +21,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     uint8 constant public decimals = 8;
 
     // Address of the founder of Humaniq.
-    // address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
-    address public founder = 0xaec3ae5d2be00bfc91597d7a1b2c43818d84396a; // This one is used only for test purposes
+    address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
 
     // Multisig address of the founders
     address public multisig = 0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883;
@@ -119,8 +118,11 @@ contract HumaniqToken is StandardToken, SafeMath {
     }
 
     /// @dev Contract constructor function sets initial token balances.
-    function HumaniqToken()
-    {
+    function HumaniqToken(address founderAddress)
+    {   
+        // Set founder address
+        founder = founderAddress;
+
         // Allocate all created tokens during ICO stage to allocationAddress.
         balances[allocationAddress] = ICOSupply;
 
@@ -128,7 +130,7 @@ contract HumaniqToken is StandardToken, SafeMath {
         balances[multisig] = div(mul(ICOSupply, 14), 86);
 
         // Set correct totalSupply and limit maximum total supply.
-        totalSupply = add(balances[allocationAddress], balances[founder]);
+        totalSupply = add(balances[allocationAddress], balances[multisig]);
         maxTotalSupply = mul(totalSupply, 5);
     }
 }

@@ -15,6 +15,7 @@ contract HumaniqICO is SafeMath {
 
     // Address of the founder of Humaniq.
     address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
+
     address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
     // Start date of the ICO
@@ -124,9 +125,12 @@ contract HumaniqICO is SafeMath {
     }
 
     /// @dev Contract constructor
-    function HumaniqICO(address token_address) {
+    function HumaniqICO(address tokenAddress, address founderAddress) {
         // Set token address
-        humaniqToken = HumaniqToken(token_address);
+        humaniqToken = HumaniqToken(tokenAddress);
+
+        // Set founder address
+        founder = founderAddress;
     }
 
     /// @dev Fallback function
