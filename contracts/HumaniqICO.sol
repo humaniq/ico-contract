@@ -16,6 +16,7 @@ contract HumaniqICO is SafeMath {
     // Address of the founder of Humaniq.
     address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
 
+    // Address where all tokens created during ICO stage initially allocated
     address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
     // Start date of the ICO
@@ -25,10 +26,7 @@ contract HumaniqICO is SafeMath {
     uint public baseTokenPrice = 10000000; // 0.001 ETH, considering 8 decimal places
 
     // Number of tokens distributed to ivnestors
-    uint public tokensDistibuted = 0;
-
-    // participant address => value in Wei
-    mapping (address => uint) public investments;
+    uint public tokensDistributed = 0;
 
     /*
      *  Modifiers
@@ -110,13 +108,10 @@ contract HumaniqICO is SafeMath {
         uint tokenCount = calculateTokens(investment, timestamp);
 
         // Update fund's and user's balance and total supply of tokens.
-        tokensDistibuted = add(tokensDistibuted, tokenCount);
-
-        // Save investment
-        investments[beneficiary] = add(investments[beneficiary], investment);
+        tokensDistributed = add(tokensDistributed, tokenCount);
 
         // Distribute tokens.
-        if (!humaniqToken.transferFrom(allocationAddress, beneficiary, mul(tokenCount, 100000000))) {
+        if (!humaniqToken.transferFrom(allocationAddress, beneficiary, tokenCount)) {
             // Tokens could not be issued.
             throw;
         }

@@ -6,258 +6,136 @@ var HumaniqICO = artifacts.require("./HumaniqICO.sol");
 var HumaniqToken = artifacts.require("./HumaniqToken.sol");
 
 // Multisig address
-var multisig = "0xaec3ae5d2be00bfc91597d7a1b2c43818d84396a";
+var multisig = "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883";
 
 contract('HumaniqICO', function(accounts) {
     // Owner of the contract
-    var icoOwner = accounts[0];
-    // Regular HumaniQ investor
-    var icoInvestor = accounts[1];
+    var founder = accounts[0];
 
-    it("Should check bonus before start of the ICO", function(done) {
+    // Start date of the ICO
+    var startICODate = 1491433200;  // 2017-04-05 23:00:00 UTC
+
+    // Address where all tokens created during ICO stage initially allocated
+    var allocationAddress = "0x1111111111111111111111111111111111111111";
+
+    it("Should verify start date", function(done) {
+        HumaniqICO.deployed().then(function(instance) {
+            icoContract = instance;
+            return instance.startDate.call();
+        }).then(function(date) {
+            assert.equal(date.toNumber(), startICODate, "Start Date should be equal to 1491433200");
+        }).then(done);
+    });
+
+    it("Should verify allocation addresses", function(done) {
+        HumaniqICO.deployed().then(function(instance) {
+            return instance.allocationAddress.call();
+        }).then(function(address) {
+            assert.equal(address, allocationAddress, "ICO Contract Allocation address should be equal to 0x1111111111111111111111111111111111111111");
+            return HumaniqToken.deployed();
+        }).then(function(instance) {
+            return instance.allocationAddressICO.call();
+        }).then(function(address) {
+            assert.equal(address, allocationAddress, "Token Contract Allocation address should be equal to 0x1111111111111111111111111111111111111111");
+        }).then(done);
+    });
+
+    it("Should check bonuses", function(done) {
+
+        var dateBeforeICO = startICODate - 1;
+        var dateIn24Hours = startICODate + 24 * 60 * 60;
+        var dateIn2Days = startICODate + 2 * 24 * 60 * 60;
+        var dateIn9Days = startICODate + 9 * 24 * 60 * 60;
+        var dateIn16Days = startICODate + 16 * 24 * 60 * 60;
+
         // ICO Contract
         var icoContract;
 
         HumaniqICO.deployed().then(function(instance) {
             icoContract = instance;
-            return icoContract.isICOActive.call(icoOwner);
-        }).then(function(isICOActive) {
-            // check that ICO is not active yet
-            assert.equal(isICOActive, false, "ICO is already activated");
-            return icoContract.getCurrentBonus.call(icoOwner);
+            return icoContract.getBonus.call(dateBeforeICO, { from: founder });
         }).then(function(bonus) {
             assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
+            return icoContract.getBonus.call(startICODate, { from: founder });
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
+            return icoContract.getBonus.call(dateIn24Hours, { from: founder });
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
+            return icoContract.getBonus.call(dateIn2Days, { from: founder });
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1250, "Bonus should be equal to 1250");
+            return icoContract.getBonus.call(dateIn9Days, { from: founder });
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1125, "Bonus should be equal to 1125");
+            return icoContract.getBonus.call(dateIn16Days, { from: founder });
+        }).then(function(bonus) {
+            assert.equal(bonus.toNumber(), 1000, "Bonus should be equal to 1000");
         }).then(done);
     });
 
-    it("Should start ICO", function(done) {
+    it("Should fix investment", function(done) {
+
         // ICO Contract
         var icoContract;
 
-        HumaniqICO.deployed().then(function(instance) {
-            icoContract = instance;
-            return icoContract.isICOActive.call(icoOwner);
-        }).then(function(isICOActive) {
-            // check that ICO is not active yet
-            assert.equal(isICOActive, false, "ICO is already activated");
-            return icoContract.startICO({
-                from: icoOwner,
-                gas: gasAmount
-            });
-        }).then(function(tx_id) {
-            return icoContract.isICOActive.call(icoOwner);
-        }).then(function(isICOActive) {
-            // check that ICO was successfuly activated
-            assert.equal(isICOActive, true, "ICO is not active");
-        }).then(done).catch(done);
-    });
-
-    it("Should invest 10 ETH", function(done) {
-        // ICO Contract
-        var icoContract;
-        // Token contract
+        // HMQ Token Contract
         var tokenContract;
 
-        var bonus = 1.499; // we just started the ICO, therefore 49.9% bonus must be applied
+        // Address of investor
+        var investor = accounts[1];
 
-        // save initial balance of the investor
-        var initialBalance = web3.fromWei(web3.eth.getBalance(icoInvestor), "Ether");
-        assert.isAtLeast(initialBalance.toNumber(), 10, "Not enough money");
+        // Investment
+        var investment = web3.toWei(10, "Ether");
 
-        var tokens, initialTokenSupply;
+        // Investment Date
+        var timestamp = startICODate;
+
+        // Number of already distributed tokens
+        var distributed;
+
+        // Base price of one token without discount
+        var tokenPrice;
+
+        // Allocation address balance
+        var allocationAddressBalance;
+
+        // Investor balance
+        var investorBalance;
+
+        // Number of tokens distributed during the fixInvestment() call
+        var tokensDistributed;
 
         HumaniqICO.deployed().then(function(instance) {
             icoContract = instance;
             return HumaniqToken.deployed();
         }).then(function(instance) {
             tokenContract = instance;
-            console.log("change minter");
-            return tokenContract.changeMinter(icoContract.address, {
-              from: icoOwner, // only owner can call this function
-              gas: gasAmount
-            });
-        }).then(function(tx_id) {
-            console.log("check contract");
-            return tokenContract.minter.call(icoInvestor);
-        }).then(function(minterAddress) {
-            // check that minterAddress was successfuly changed
-            assert.equal(minterAddress, icoContract.address, "minterAddress wasn't changed");
-
-            return tokenContract.totalSupply.call();
-        }).then(function(totalSupply) {
-            // save initial token supply
-            initialTokenSupply = totalSupply.toNumber() / decimalDevider;
-            return tokenContract.balanceOf.call(icoInvestor);
+            return icoContract.tokensDistributed.call();
+        }).then(function(number) {
+            distributed = number.toNumber();
+            return icoContract.baseTokenPrice.call();
+        }).then(function(price) {
+            tokenPrice = price.toNumber();
+            return tokenContract.balanceOf(allocationAddress);
         }).then(function(balance) {
-            console.log("fund");
-            assert.equal(balance.toNumber(), 0, "Not null balance");
-            tokens = balance;
-            return icoContract.fund({
-                from: icoInvestor,
-                gas: gasAmount,
-                value: web3.toWei(10, "Ether")
-            })
-        }).then(function(tx_id) {
-            console.log("balanceOf");
-            return tokenContract.balanceOf.call(icoInvestor);
+            allocationAddressBalance = balance.toNumber();
+            return tokenContract.balanceOf(investor);
         }).then(function(balance) {
-            console.log("totalSupply");
-            // check that investor spent 10 ethers
-            var accountBalance = web3.fromWei(web3.eth.getBalance(icoInvestor), "Ether");
-            assert.closeTo(accountBalance.toNumber(),
-                initialBalance - 10,
-                0.1, // some ethers were spent on gas
-                "Wrong number of ether was spent");
-
-            // check that investor received correct number of tokens
-            console.log(balance.toNumber() / decimalDevider, "tokens were issued for 10 Ether");
-            assert.closeTo(balance.toNumber() / decimalDevider,
-                (web3.toWei(10, "Ether") / baseTokenPrice) * bonus,
-                0.0000001, // possible javascript computational error
-                "Wrong number of tokens was given");
-
-            return tokenContract.totalSupply.call();
-        }).then(function(totalSupply) {
-            console.log("icoBalance");
-            // check that totalSupply of tokens is correct
-            assert.closeTo(totalSupply.toNumber() / decimalDevider - initialTokenSupply,
-                (web3.toWei(10, "Ether") / baseTokenPrice) * bonus,
-                0.0000001, // possible javascript computational error
-                "Wrong total supply");
-            return icoContract.icoBalance.call();
-        }).then(function(icoBalance) {
-            // check that ICO balance is correct
-            assert.equal(icoBalance.toNumber(), web3.toWei(10, "Ether"), "Wrong ICO balance");
-        }).then(done).catch(done);
-    });
-
-    it("Should invest 5 ETH via fixInvestment()", function(done) {
-        // ICO Contract
-        var icoContract;
-        // Token contract
-        var tokenContract;
-
-        // we just started the ICO, therefore 49.9% bonus must be applied
-        var bonus = 1.499;
-
-        // save initial balance of the investor
-        var initialBalance = web3.fromWei(web3.eth.getBalance(icoInvestor), "Ether");
-        assert.isAtLeast(initialBalance.toNumber(), 10, "Not enough money");
-
-        var initialTokens, initialTokenSupply, initialICOBalance;
-
-         HumaniqICO.deployed().then(function(instance) {
-            icoContract = instance;
-            return HumaniqToken.deployed();
-        }).then(function(instance) {
-            tokenContract = instance;
-            return tokenContract.balanceOf.call(icoInvestor);
+            investorBalance = balance.toNumber();
+            return icoContract.fixInvestment(investor, investment, timestamp);
+        }).then(function(tx) {
+            return icoContract.tokensDistributed.call();
+        }).then(function(number) {
+            var discountedPrice = Math.floor((tokenPrice * 1000) / 1499);
+            tokensDistributed = Math.floor(investment / discountedPrice);
+            assert.equal(number.toNumber(), distributed + tokensDistributed);
+            return tokenContract.balanceOf(allocationAddress);
         }).then(function(balance) {
-            // save initial tokens
-            initialTokens = balance.toNumber() / decimalDevider;
-            return tokenContract.totalSupply.call();
-        }).then(function(totalSupply) {
-            // save initial token supply
-            initialTokenSupply = totalSupply.toNumber() / decimalDevider;
-            return icoContract.icoBalance.call();
-        }).then(function(icoBalance) {
-            // save initial ICO balance
-            initialICOBalance = icoBalance.toNumber();
-            // fix 5 ETH investment using fundBTC()
-            return icoContract.fixInvestment(icoInvestor, // beneficiary
-                web3.toWei(5, "Ether"), // amount
-                Date.now() / 1000, // time of investment (in seconds)
-                {
-                    from: icoOwner, // only owner can call this function
-                    gas: gasAmount
-                });
-        }).then(function(tx_id) {
-            return tokenContract.balanceOf.call(icoInvestor);
+            assert.equal(balance.toNumber(), allocationAddressBalance - tokensDistributed);
+            return tokenContract.balanceOf(investor);
         }).then(function(balance) {
-            // check that beneficiary received correct number of tokens
-
-            assert.closeTo(balance.toNumber() / decimalDevider,
-                initialTokens + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
-                0.0000001, // possible javascript computational error
-                "Wrong number of tokens was given");
-            console.log(balance.toNumber() / decimalDevider - initialTokens, "tokens were issued for 5 Ether");
-            return tokenContract.totalSupply.call();
-        }).then(function(totalSupply) {
-            // check that totalSupply of tokens is correct
-            assert.closeTo(totalSupply.toNumber() / decimalDevider,
-                initialTokenSupply + (web3.toWei(5, "Ether") / baseTokenPrice) * bonus,
-                0.0000001, // possible javascript computational error
-                "Wrong total supply");
-            return icoContract.icoBalance.call();
-        }).then(function(icoBalance) {
-            // check that ICO balance is correct
-            assert.equal(icoBalance.toNumber(),
-                initialICOBalance + parseInt(web3.toWei(5, "Ether")),
-                "Wrong ICO balance");
+            assert.equal(balance.toNumber(), investorBalance + tokensDistributed);
         }).then(done);
     });
-
-    it("Should return current bonus", function(done) {
-        var icoContract;
-
-        HumaniqICO.deployed().then(function(instance) {
-            icoContract = instance;
-            return icoContract.getCurrentBonus.call({
-                from: icoOwner
-            });
-        }).then(function(discount) {
-            // check that getBonus() returns correct value
-            assert.equal((discount.toNumber() - 1000) / 10, 49.9, "Wrong bonus");
-        }).then(done);
-    });
-
-    it("Should finish crowdsale and allocate founder bonus", function(done) {
-        // ICO Contract
-        var icoContract;
-        // Token contract
-        var tokenContract;
-
-        var icoTotalBalance = 0;
-        var totalCoinsIssued = 0;
-        var initialFounderBalance = 0;
-
-        HumaniqICO.deployed().then(function(instance) {
-            icoContract = instance;
-            return HumaniqToken.deployed();
-        }).then(function(instance) {
-            tokenContract = instance;
-            return icoContract.coinsIssued.call();
-        }).then(function(coinsIssued) {
-            // save total number of tokens
-            totalCoinsIssued = coinsIssued.toNumber();
-            return tokenContract.balanceOf.call(icoOwner);
-        }).then(function(balance) {
-            initialFounderBalance = balance.toNumber();
-            return icoContract.icoBalance.call();
-        }).then(function(icoBalance) {
-            // save ICO total balance
-            icoTotalBalance = icoBalance.toNumber();
-
-            // finish crowdsale
-            return icoContract.finishCrowdsale({
-                from: icoOwner,
-                gas: gasAmount,
-                value: 0
-            });
-        }).then(function(tx_id) {
-            return icoContract.isICOActive.call();
-        }).then(function(isICOActive) {
-            // check that ICO was closed
-            assert.equal(isICOActive, false, "ICO wasn't closed");
-
-            return tokenContract.balanceOf.call(multisig);
-        }).then(function(founderTokens) {
-            // founders are supposed to receive 14% of all issued tokens
-            var founderBonus = Math.floor((totalCoinsIssued / 86) * 14);
-            totalCoinsIssued += founderBonus;
-            // check that founders received proper number of tokens
-            assert.equal(founderBonus, (founderTokens.toNumber() - initialFounderBalance) / decimalDevider, "Founders were not allocated with proper number of coins");
-        }).then(done);
-    });
-
 });

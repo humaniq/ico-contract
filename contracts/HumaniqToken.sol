@@ -27,7 +27,10 @@ contract HumaniqToken is StandardToken, SafeMath {
     address public multisig = 0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883;
 
     // Address where all tokens created during ICO stage initially allocated
-    address public allocationAddress = 0x1111111111111111111111111111111111111111;
+    address public allocationAddressICO = 0x1111111111111111111111111111111111111111;
+
+    // Address where all tokens created during preICO stage initially allocated
+    address public allocationAddressPreICO = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     // 31 820 314 tokens were minted during preICO
     uint public preICOSupply = mul(31820314, 100000000);
@@ -93,8 +96,8 @@ contract HumaniqToken is StandardToken, SafeMath {
     {
         minter = newAddress;
 
-        // Allow emission contract to distribute tokens
-        allowed[allocationAddress][minter] = ICOSupply;
+        // Allow emission contract to distribute tokens minted during ICO stage
+        allowed[allocationAddressICO][minter] = ICOSupply;
     }
 
     /// @dev Function to change founder address.
@@ -105,6 +108,9 @@ contract HumaniqToken is StandardToken, SafeMath {
         returns (bool)
     {
         founder = newAddress;
+
+        // Allow founder to distribute tokens minted during preICO stage
+        allowed[allocationAddressPreICO][founder] = preICOSupply;
     }
 
     /// @dev Function to change multisig address.
@@ -123,14 +129,21 @@ contract HumaniqToken is StandardToken, SafeMath {
         // Set founder address
         founder = founderAddress;
 
-        // Allocate all created tokens during ICO stage to allocationAddress.
-        balances[allocationAddress] = ICOSupply;
+        // Allocate all created tokens during ICO stage to allocationAddressICO.
+        balances[allocationAddressICO] = ICOSupply;
+
+        // Allocate all created tokens during preICO stage to allocationAddressPreICO.
+        balances[allocationAddressPreICO] = preICOSupply;
+
+        // Allow founder to distribute tokens minted during preICO stage
+        allowed[allocationAddressPreICO][founder] = preICOSupply;
 
         // Give 14 percent of all tokens to founders.
         balances[multisig] = div(mul(ICOSupply, 14), 86);
 
         // Set correct totalSupply and limit maximum total supply.
-        totalSupply = add(balances[allocationAddress], balances[multisig]);
+        totalSupply = add(ICOSupply, balances[multisig]);
+        totalSupply = add(totalSupply, preICOSupply);
         maxTotalSupply = mul(totalSupply, 5);
     }
 }
