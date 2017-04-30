@@ -5,6 +5,7 @@ import "./SafeMath.sol";
 
 /// @title HumaniqICO contract - Takes funds from users and issues tokens.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
+/// @author Alexey Bashlykov - <alexey@etherionlab.com>
 contract HumaniqICO is SafeMath {
 
     /*
@@ -12,17 +13,18 @@ contract HumaniqICO is SafeMath {
      */
     HumaniqToken public humaniqToken;
 
-    /*
-     *  Storage
-     */
-    address public founder;
-    address public multisig;
-    uint public startDate = 0;
-    uint public icoBalance = 0;
-    uint public coinsIssued = 0;
-    uint public baseTokenPrice = 1 finney; // 0.001 ETH
-    uint public discountedPrice = baseTokenPrice;
-    bool public isICOActive = false;
+    // Address of the founder of Humaniq.
+    address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
+    address public allocationAddress = 0x1111111111111111111111111111111111111111;
+
+    // Start date of the ICO
+    uint public startDate = 1491433200;  // 2017-04-05 23:00:00 UTC
+
+    // Token price without discount during the ICO stage
+    uint public baseTokenPrice = 10000000; // 0.001 ETH, considering 8 decimal places
+
+    // Number of tokens distributed to ivnestors
+    uint public tokensDistibuted = 0;
 
     // participant address => value in Wei
     mapping (address => uint) public investments;
@@ -38,16 +40,9 @@ contract HumaniqICO is SafeMath {
         _;
     }
 
-    modifier minInvestment() {
+    modifier minInvestment(uint investment) {
         // User has to send at least the ether value of one token.
-        if (msg.value < baseTokenPrice) {
-            throw;
-        }
-        _;
-    }
-
-    modifier icoActive() {
-        if (isICOActive == false) {
+        if (investment < baseTokenPrice) {
             throw;
         }
         _;
@@ -70,8 +65,8 @@ contract HumaniqICO is SafeMath {
         returns (uint)
     {
 
-        if (startDate == 0) {
-            return 1499; // 49.9%
+        if (startDate > timestamp) {
+            return 1499;  // 49.9%
         }
 
         uint icoDuration = timestamp - startDate;
@@ -92,61 +87,12 @@ contract HumaniqICO is SafeMath {
         returns (uint)
     {
         // calculate discountedPrice
-        discountedPrice = div(mul(baseTokenPrice, 1000), getBonus(timestamp));
+        uint discountedPrice = div(mul(baseTokenPrice, 1000), getBonus(timestamp));
 
         // Token count is rounded down. Sent ETH should be multiples of baseTokenPrice.
         return div(investment, discountedPrice);
     }
 
-    /// @dev Issues tokens
-    /// @param beneficiary Address the tokens will be issued to.
-    /// @param investment Invested amount in Wei
-    /// @param timestamp Time of investment (in seconds)
-    /// @param sendToFounders Whether to send received ethers to multisig address or not
-    function issueTokens(address beneficiary, uint investment, uint timestamp, bool sendToFounders)
-        private
-        returns (uint)
-    {
-        uint tokenCount = calculateTokens(investment, timestamp);
-
-        // Ether spent by user.
-        uint roundedInvestment = mul(tokenCount, discountedPrice);
-
-        // Send change back to user.
-        if (sendToFounders && investment > roundedInvestment && !beneficiary.send(sub(investment, roundedInvestment))) {
-            throw;
-        }
-
-        // Update fund's and user's balance and total supply of tokens.
-        icoBalance = add(icoBalance, investment);
-        coinsIssued = add(coinsIssued, tokenCount);
-        investments[beneficiary] = add(investments[beneficiary], roundedInvestment);
-
-        // Send funds to founders if investment was made
-        if (sendToFounders && !multisig.send(roundedInvestment)) {
-            // Could not send money
-            throw;
-        }
-        // Issue tokens.
-        if (!humaniqToken.issueTokens(beneficiary, mul(tokenCount, 100000000))) {
-            // Tokens could not be issued.
-            throw;
-        }
-
-        return tokenCount;
-    }
-
-    /// @dev Allows user to create tokens if token creation is still going
-    /// and cap was not reached. Returns token count.
-    function fund()
-        public
-        icoActive
-        minInvestment
-        payable
-        returns (uint)
-    {
-        return issueTokens(msg.sender, msg.value, now, true);
-    }
 
     /// @dev Issues tokens for users who made BTC purchases.
     /// @param beneficiary Address the tokens will be issued to.
@@ -154,86 +100,37 @@ contract HumaniqICO is SafeMath {
     /// @param timestamp Time of investment (in seconds)
     function fixInvestment(address beneficiary, uint investment, uint timestamp)
         external
-        icoActive
         onlyFounder
+        minInvestment(investment)
         returns (uint)
-    {
-        if (timestamp == 0) {
-            return issueTokens(beneficiary, investment, now, false);
+    {   
+
+        // Calculate number of tokens to mint
+        uint tokenCount = calculateTokens(investment, timestamp);
+
+        // Update fund's and user's balance and total supply of tokens.
+        tokensDistibuted = add(tokensDistibuted, tokenCount);
+
+        // Save investment
+        investments[beneficiary] = add(investments[beneficiary], investment);
+
+        // Distribute tokens.
+        if (!humaniqToken.transferFrom(allocationAddress, beneficiary, mul(tokenCount, 100000000))) {
+            // Tokens could not be issued.
+            throw;
         }
 
-        return issueTokens(beneficiary, investment, timestamp, false);
+        return tokenCount;
     }
 
-    /// @dev If ICO has successfully finished sends the money to multisig
-    /// wallet.
-    function finishCrowdsale()
-        external
-        onlyFounder
-        returns (bool)
-    {
-        if (isICOActive == true) {
-            isICOActive = false;
-            // Founders receive 14% of all created tokens.
-             uint founderBonus = div(mul(coinsIssued, 14), 86);
-             if (!humaniqToken.issueTokens(multisig, mul(founderBonus, 100000000))) {
-                 // Tokens could not be issued.
-                 throw;
-             }
-             coinsIssued = add(coinsIssued, founderBonus);
-        }
-    }
-
-    /// @dev Sets token value in Wei.
-    /// @param valueInWei New value.
-    function changeBaseTokenPrice(uint valueInWei)
-        external
-        onlyFounder
-        returns (bool)
-    {
-        baseTokenPrice = valueInWei;
-        return true;
-    }
-
-    function changeTokenAddress(address token_address)
-        public
-        onlyFounder
-    {
-         humaniqToken = HumaniqToken(token_address);
-    }
-
-    function changeFounder(address _founder)
-        public
-        onlyFounder
-    {
-        founder = _founder;
-    }
-
-    /// @dev Function that activates ICO.
-    function startICO()
-        external
-        onlyFounder
-    {
-        if (isICOActive == false && startDate == 0) {
-          // Start ICO
-          isICOActive = true;
-          // Set start-date of token creation
-          startDate = now;
-        }
-    }
-
-    /// @dev Contract constructor function sets founder and multisig addresses.
-    function HumaniqICO(address _founder, address _multisig, address token_address) {
-        // Set founder address
-        founder = _founder;
-        // Set multisig address
-        multisig = _multisig;
+    /// @dev Contract constructor
+    function HumaniqICO(address token_address) {
         // Set token address
         humaniqToken = HumaniqToken(token_address);
     }
 
-    /// @dev Fallback function. Calls fund() function to create tokens.
+    /// @dev Fallback function
     function () payable {
-        fund();
+        throw;
     }
 }

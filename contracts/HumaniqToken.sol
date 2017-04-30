@@ -5,6 +5,7 @@ import "./SafeMath.sol";
 
 /// @title Token contract - Implements Standard Token Interface with HumaniQ features.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
+/// @author Alexey Bashlykov - <alexey@etherionlab.com>
 contract HumaniqToken is StandardToken, SafeMath {
 
     /*
@@ -19,9 +20,23 @@ contract HumaniqToken is StandardToken, SafeMath {
     string constant public symbol = "HMQ";
     uint8 constant public decimals = 8;
 
-    address public founder;
+    // Address of the founder of Humaniq.
+    // address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
+    address public founder = 0xaec3ae5d2be00bfc91597d7a1b2c43818d84396a; // This one is used only for test purposes
+
+    // Multisig address of the founders
+    address public multisig = 0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883;
+
+    // Address where all tokens created during ICO stage initially allocated
     address public allocationAddress = 0x1111111111111111111111111111111111111111;
 
+    // 31 820 314 tokens were minted during preICO
+    uint public preICOSupply = mul(31820314, 100000000);
+
+    // 130 158 351 tokens were minted during ICO
+    uint public ICOSupply = mul(130158351, 100000000);
+
+    // Max number of tokens that can be minted
     uint public maxTotalSupply;
 
     /*
@@ -35,7 +50,7 @@ contract HumaniqToken is StandardToken, SafeMath {
         _;
     }
 
-    modifier isMinter() {
+    modifier onlyMinter() {
         // Only minter is allowed to proceed.
         if (msg.sender != minter) {
             throw;
@@ -53,7 +68,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     function issueTokens(address _for, uint tokenCount)
         external
         payable
-        isMinter
+        onlyMinter
         returns (bool)
     {
         if (tokenCount == 0) {
@@ -61,7 +76,7 @@ contract HumaniqToken is StandardToken, SafeMath {
         }
 
         if (add(totalSupply, tokenCount) > maxTotalSupply) {
-          throw;
+            throw;
         }
 
         totalSupply = add(totalSupply, tokenCount);
@@ -78,24 +93,42 @@ contract HumaniqToken is StandardToken, SafeMath {
         returns (bool)
     {
         minter = newAddress;
+
+        // Allow emission contract to distribute tokens
+        allowed[allocationAddress][minter] = ICOSupply;
+    }
+
+    /// @dev Function to change founder address.
+    /// @param newAddress Address of new founder.
+    function changeFounder(address newAddress)
+        public
+        onlyFounder
+        returns (bool)
+    {
+        founder = newAddress;
+    }
+
+    /// @dev Function to change multisig address.
+    /// @param newAddress Address of new multisig.
+    function changeMultisig(address newAddress)
+        public
+        onlyFounder
+        returns (bool)
+    {
+        multisig = newAddress;
     }
 
     /// @dev Contract constructor function sets initial token balances.
-    /// @param _founder Address of the founder of HumaniQ.
-    function HumaniqToken(address _founder)
+    function HumaniqToken()
     {
-        founder = _founder;
-
-        // Allocate all created tokens to allocationAddress.
-        balances[allocationAddress] = 120000000 * 100000000;
-        // Allow founder to distribute them.
-        allowed[allocationAddress][minter] = 120000000 * 100000000;
+        // Allocate all created tokens during ICO stage to allocationAddress.
+        balances[allocationAddress] = ICOSupply;
 
         // Give 14 percent of all tokens to founders.
-        balances[_founder] = div(mul(balances[allocationAddress], 14), 86);
+        balances[multisig] = div(mul(ICOSupply, 14), 86);
 
         // Set correct totalSupply and limit maximum total supply.
-        totalSupply = add(balances[allocationAddress], balances[_founder]);
+        totalSupply = add(balances[allocationAddress], balances[founder]);
         maxTotalSupply = mul(totalSupply, 5);
     }
 }
