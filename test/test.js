@@ -13,7 +13,7 @@ contract('HumaniqICO', function(accounts) {
     var startICODate = 1491433200;  // 2017-04-05 23:00:00 UTC
 
     // End date of the ICO
-    var endICODate = 1493247600;  // 2017-04-05 23:00:00 UTC
+    var endICODate = 1493247600;  // 2017-04-26 23:00:00 UTC
 
     // Multisig address
     var multisig = "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883";
