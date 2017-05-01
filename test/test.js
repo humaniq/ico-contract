@@ -12,6 +12,9 @@ contract('HumaniqICO', function(accounts) {
     // Start date of the ICO
     var startICODate = 1491433200;  // 2017-04-05 23:00:00 UTC
 
+    // End date of the ICO
+    var endICODate = 1493247600;  // 2017-04-05 23:00:00 UTC
+
     // Multisig address
     var multisig = "0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883";
 
@@ -73,29 +76,33 @@ contract('HumaniqICO', function(accounts) {
         var dateIn9Days = startICODate + 9 * 24 * 60 * 60;
         var dateIn16Days = startICODate + 16 * 24 * 60 * 60;
 
+        var dates = [];
         // ICO Contract
         var icoContract;
 
         HumaniqICO.deployed().then(function(instance) {
             icoContract = instance;
-            return icoContract.getBonus.call(dateBeforeICO, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
-            return icoContract.getBonus.call(startICODate, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
-            return icoContract.getBonus.call(dateIn24Hours, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1499, "Bonus should be equal to 1499");
-            return icoContract.getBonus.call(dateIn2Days, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1250, "Bonus should be equal to 1250");
-            return icoContract.getBonus.call(dateIn9Days, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1125, "Bonus should be equal to 1125");
-            return icoContract.getBonus.call(dateIn16Days, { from: founder });
-        }).then(function(bonus) {
-            assert.equal(bonus.toNumber(), 1000, "Bonus should be equal to 1000");
+            var promises = [];
+            for (var date = startICODate - 3600; date <= endICODate; date += 3600) {
+                dates.push(date);
+                promises.push(icoContract.getBonus.call(date, { from: founder }));
+            }
+            console.log('await ' + promises.length + ' promises');
+            return Promise.all(promises);
+        }).then(function(results) {
+            for (var i = 0; i < dates.length; ++i) {
+                date = dates[i];
+                bonus = results[i].toNumber();
+                if (date >= dateIn16Days) {
+                    assert.equal(bonus, 1000, "Bonus on " + date + " should be equal to 1000");
+                } else if (date >= dateIn9Days) {
+                    assert.equal(bonus, 1125, "Bonus on " + date + " should be equal to 1125");
+                } else if (date >= dateIn2Days) {
+                    assert.equal(bonus, 1250, "Bonus on " + date + " should be equal to 1250");
+                } else {
+                    assert.equal(bonus, 1499, "Bonus on " + date + " should be equal to 1125");
+                }
+            }
         }).then(done);
     });
 

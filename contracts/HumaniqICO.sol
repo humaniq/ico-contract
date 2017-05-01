@@ -65,7 +65,10 @@ contract HumaniqICO is SafeMath {
         public
         constant
         returns (uint)
-    {
+    {   
+        if (timestamp > endDate) {
+            throw;
+        }
 
         if (startDate > timestamp) {
             return 1499;  // 49.9%
