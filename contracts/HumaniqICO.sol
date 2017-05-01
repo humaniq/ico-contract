@@ -22,10 +22,13 @@ contract HumaniqICO is SafeMath {
     // Start date of the ICO
     uint public startDate = 1491433200;  // 2017-04-05 23:00:00 UTC
 
+    // End date of the ICO
+    uint public endDate = 1493247600;  // 2017-04-26 23:00:00 UTC
+
     // Token price without discount during the ICO stage
     uint public baseTokenPrice = 10000000; // 0.001 ETH, considering 8 decimal places
 
-    // Number of tokens distributed to ivnestors
+    // Number of tokens distributed to investors
     uint public tokensDistributed = 0;
 
     /*

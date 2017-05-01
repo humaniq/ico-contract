@@ -93,11 +93,14 @@ contract HumaniqToken is StandardToken, SafeMath {
         public
         onlyFounder
         returns (bool)
-    {
+    {   
+        // Forbid previous emission contract to distribute tokens minted during ICO stage
+        delete allowed[allocationAddressICO][minter];
+
         minter = newAddress;
 
         // Allow emission contract to distribute tokens minted during ICO stage
-        allowed[allocationAddressICO][minter] = ICOSupply;
+        allowed[allocationAddressICO][minter] = balanceOf(allocationAddressICO);
     }
 
     /// @dev Function to change founder address.
@@ -106,11 +109,8 @@ contract HumaniqToken is StandardToken, SafeMath {
         public
         onlyFounder
         returns (bool)
-    {
+    {   
         founder = newAddress;
-
-        // Allow founder to distribute tokens minted during preICO stage
-        allowed[allocationAddressPreICO][founder] = preICOSupply;
     }
 
     /// @dev Function to change multisig address.
