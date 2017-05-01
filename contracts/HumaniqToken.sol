@@ -5,12 +5,13 @@ import "./SafeMath.sol";
 
 /// @title Token contract - Implements Standard Token Interface with HumaniQ features.
 /// @author Evgeny Yurtaev - <evgeny@etherionlab.com>
+/// @author Alexey Bashlykov - <alexey@etherionlab.com>
 contract HumaniqToken is StandardToken, SafeMath {
 
     /*
      * External contracts
      */
-    address public emissionContractAddress = 0x0;
+    address public minter;
 
     /*
      * Token meta data
@@ -19,12 +20,26 @@ contract HumaniqToken is StandardToken, SafeMath {
     string constant public symbol = "HMQ";
     uint8 constant public decimals = 8;
 
-    address public founder = 0x0;
-    bool public locked = true;
+    // Address of the founder of Humaniq.
+    address public founder = 0xc890b1f532e674977dfdb791cafaee898dfa9671;
 
-    bool public icoFinished = false;
-    // Zero initially and will be set after the end of the ICO by calling finalizeMaxTotalSupply.
-    uint public maxTotalSupply = 0;
+    // Multisig address of the founders
+    address public multisig = 0xa2c9a7578e2172f32a36c5c0e49d64776f9e7883;
+
+    // Address where all tokens created during ICO stage initially allocated
+    address constant public allocationAddressICO = 0x1111111111111111111111111111111111111111;
+
+    // Address where all tokens created during preICO stage initially allocated
+    address constant public allocationAddressPreICO = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+    // 31 820 314 tokens were minted during preICO
+    uint constant public preICOSupply = mul(31820314, 100000000);
+
+    // 130 158 351 tokens were minted during ICO
+    uint constant public ICOSupply = mul(130158351, 100000000);
+
+    // Max number of tokens that can be minted
+    uint public maxTotalSupply;
 
     /*
      * Modifiers
@@ -37,17 +52,9 @@ contract HumaniqToken is StandardToken, SafeMath {
         _;
     }
 
-    modifier isCrowdfundingContract() {
-        // Only emission address is allowed to proceed.
-        if (msg.sender != emissionContractAddress) {
-            throw;
-        }
-        _;
-    }
-
-    modifier unlocked() {
-        // Only when transferring coins is enabled.
-        if (locked == true) {
+    modifier onlyMinter() {
+        // Only minter is allowed to proceed.
+        if (msg.sender != minter) {
             throw;
         }
         _;
@@ -63,76 +70,80 @@ contract HumaniqToken is StandardToken, SafeMath {
     function issueTokens(address _for, uint tokenCount)
         external
         payable
-        isCrowdfundingContract
+        onlyMinter
         returns (bool)
     {
         if (tokenCount == 0) {
             return false;
         }
-        
-        if (icoFinished && add(totalSupply, tokenCount) > maxTotalSupply) {
-          throw;
+
+        if (add(totalSupply, tokenCount) > maxTotalSupply) {
+            throw;
         }
-        
+
         totalSupply = add(totalSupply, tokenCount);
         balances[_for] = add(balances[_for], tokenCount);
         Issuance(_for, tokenCount);
         return true;
     }
 
-    function transfer(address _to, uint256 _value)
-        unlocked
-        returns (bool success)
-    {
-        return super.transfer(_to, _value);
-    }
-
-    function transferFrom(address _from, address _to, uint256 _value)
-        unlocked
-        returns (bool success)
-    {
-        return super.transferFrom(_from, _to, _value);
-    }
-
     /// @dev Function to change address that is allowed to do emission.
     /// @param newAddress Address of new emission contract.
-    function changeEmissionContractAddress(address newAddress)
-        external
+    function changeMinter(address newAddress)
+        public
+        onlyFounder
+        returns (bool)
+    {   
+        // Forbid previous emission contract to distribute tokens minted during ICO stage
+        delete allowed[allocationAddressICO][minter];
+
+        minter = newAddress;
+
+        // Allow emission contract to distribute tokens minted during ICO stage
+        allowed[allocationAddressICO][minter] = balanceOf(allocationAddressICO);
+    }
+
+    /// @dev Function to change founder address.
+    /// @param newAddress Address of new founder.
+    function changeFounder(address newAddress)
+        public
+        onlyFounder
+        returns (bool)
+    {   
+        founder = newAddress;
+    }
+
+    /// @dev Function to change multisig address.
+    /// @param newAddress Address of new multisig.
+    function changeMultisig(address newAddress)
+        public
         onlyFounder
         returns (bool)
     {
-        emissionContractAddress = newAddress;
-    }
-
-    /// @dev Function that locks/unlocks transfers of token.
-    /// @param value True/False
-    function lock(bool value)
-        external
-        onlyFounder
-    {
-        locked = value;
-    }
-
-    /// @dev Finalization of maxTotalSupply after the ICO.
-    function finalizeMaxTotalSupply(uint coinsIssued)
-      external
-      isCrowdfundingContract
-      returns (bool)
-    {
-      if (icoFinished) {
-        return false;
-      }
-      icoFinished = true;
-      // Set max total supply of coins to be 5X after an ICO.
-      maxTotalSupply = mul(coinsIssued, 5);
-      return true;
+        multisig = newAddress;
     }
 
     /// @dev Contract constructor function sets initial token balances.
-    /// @param _founder Address of the founder of HumaniQ.
-    function HumaniqToken(address _founder)
-    {
-        totalSupply = 0;
-        founder = _founder;
+    function HumaniqToken(address founderAddress)
+    {   
+        // Set founder address
+        founder = founderAddress;
+
+        // Allocate all created tokens during ICO stage to allocationAddressICO.
+        balances[allocationAddressICO] = ICOSupply;
+
+        // Allocate all created tokens during preICO stage to allocationAddressPreICO.
+        balances[allocationAddressPreICO] = preICOSupply;
+
+        // Allow founder to distribute tokens minted during preICO stage
+        allowed[allocationAddressPreICO][founder] = preICOSupply;
+
+        // Give 14 percent of all tokens to founders.
+        balances[multisig] = div(mul(ICOSupply, 14), 86);
+
+        // Set correct totalSupply and limit maximum total supply.
+        totalSupply = add(ICOSupply, balances[multisig]);
+        totalSupply = add(totalSupply, preICOSupply);
+        maxTotalSupply = mul(totalSupply, 5);
     }
 }
