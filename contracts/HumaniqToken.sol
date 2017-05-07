@@ -35,8 +35,8 @@ contract HumaniqToken is StandardToken, SafeMath {
     // 31 820 314 tokens were minted during preICO
     uint constant public preICOSupply = mul(31820314, 100000000);
 
-    // 130 158 351 tokens were minted during ICO
-    uint constant public ICOSupply = mul(130158351, 100000000);
+    // 131 038 286 tokens were minted during ICO
+    uint constant public ICOSupply = mul(131038286, 100000000);
 
     // Max number of tokens that can be minted
     uint public maxTotalSupply;

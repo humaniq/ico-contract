@@ -22,7 +22,7 @@ contract('HumaniqICO', function(accounts) {
     var allocationAddress = "0x1111111111111111111111111111111111111111";
 
     // Number of tokens minted during ICO
-    var ICOsupply = 130158351 * 100000000;
+    var ICOsupply = 131038286 * 100000000;
 
     // Number of tokens minted during preICO
     var preICOsupply = 31820314 * 100000000;
