@@ -16,7 +16,7 @@ contract HumaniqToken is StandardToken, SafeMath {
     /*
      * Token meta data
      */
-    string constant public name = "HumaniQ";
+    string constant public name = "Humaniq";
     string constant public symbol = "HMQ";
     uint8 constant public decimals = 8;
 
