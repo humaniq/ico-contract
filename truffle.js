@@ -20,7 +20,7 @@ module.exports = {
             port: 8545,
             network_id: 1,  // Ethereum public network
             gas: 4000000,
-            gasPrice: 20000000000,
+            gasPrice: 20000000000
         }
     }
 };

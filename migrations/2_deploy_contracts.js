@@ -8,7 +8,7 @@ module.exports = function(deployer, network) {
     if (network == "live") {
         founder = "0xc890b1f532e674977dfdb791cafaee898dfa9671";
         ICOfounder = founder;
-    } if (network == "testnet") {
+    } else if (network == "testnet") {
         founder = "0x42ccb9b37dd47dec2bbf85d01b0202ca237e109d";
         ICOfounder = "0xc890b1f532e674977dfdb791cafaee898dfa9671";
     } else {
